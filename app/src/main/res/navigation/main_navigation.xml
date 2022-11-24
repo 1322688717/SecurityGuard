@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_navigation"
+    app:startDestination="@id/mainFragment">
+
+    <fragment
+        android:id="@+id/mainFragment"
+        android:name="com.guard.afx.ui.fragment.MainFragment"
+        android:label="fragment_main"
+        tools:layout="@layout/fragment_main" >
+        <action
+            android:id="@+id/action_mainFragment_to_magneticFragment"
+            app:destination="@id/magneticFragment" />
+        <action
+            android:id="@+id/action_mainFragment_to_pinholeDetectionFragment"
+            app:destination="@id/pinholeDetectionFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/pinholeDetectionFragment"
+        android:name="com.guard.afx.ui.fragment.PinholeDetectionFragment"
+        android:label="fragment_pinhole_detection"
+        tools:layout="@layout/fragment_pinhole_detection" >
+        <argument
+            android:name="wifi"
+            app:argType="string"
+            android:defaultValue="wifi" />
+    </fragment>
+    <fragment
+        android:id="@+id/magneticFragment"
+        android:name="com.guard.afx.ui.fragment.MagneticFragment"
+        android:label="fragment_magnetic"
+        tools:layout="@layout/fragment_magnetic" />
+</navigation>
