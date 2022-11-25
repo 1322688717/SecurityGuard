@@ -12,6 +12,7 @@
 <!--    toolbar-->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
+        android:layout_marginTop="@dimen/dp_23"
         android:layout_height="@dimen/dp_50">
 
         <TextView
@@ -220,16 +221,17 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/dp_20"
-            android:text="正在检测当前无线网络中可能存在的针孔设备……"
+            android:text=""
             android:textColor="@color/blue_text_color"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/tv_one" />
 
         <TextView
+            android:id="@+id/tv_ratio"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="86%"
+            android:text=""
             android:textColor="@color/white"
             app:layout_constraintBottom_toBottomOf="@+id/textView19"
             app:layout_constraintStart_toEndOf="@+id/textView19"
@@ -244,7 +246,7 @@
             style="@style/MyProgressBar"
             android:max="100"
             android:progress="0"
-            android:background="@drawable/progressbar_bg"
+
             android:layout_marginTop="@dimen/dp_20"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"

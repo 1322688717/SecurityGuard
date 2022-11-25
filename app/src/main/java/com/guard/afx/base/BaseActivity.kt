@@ -1,8 +1,10 @@
 package com.guard.afx.base
 
 import android.os.Bundle
+import android.os.PersistableBundle
 import androidx.databinding.ViewDataBinding
 import androidx.viewbinding.ViewBinding
+import com.guard.afx.utlis.StatusBarUtil
 import me.hgj.jetpackmvvm.base.activity.BaseVmDbActivity
 import me.hgj.jetpackmvvm.base.activity.BaseVmVbActivity
 import me.hgj.jetpackmvvm.base.viewmodel.BaseViewModel
@@ -16,6 +18,11 @@ import me.hgj.jetpackmvvm.base.viewmodel.BaseViewModel
  */
 abstract class BaseActivity<VM : BaseViewModel, DB : ViewBinding> : BaseVmVbActivity<VM, DB>() {
 
+    override fun onCreate(savedInstanceState: Bundle?, persistentState: PersistableBundle?) {
+        super.onCreate(savedInstanceState, persistentState)
+
+    }
+
     abstract override fun initView(savedInstanceState: Bundle?)
 
     /**
@@ -28,12 +35,15 @@ abstract class BaseActivity<VM : BaseViewModel, DB : ViewBinding> : BaseVmVbActi
        // showLoadingExt(message)
     }
 
+
     /**
      * 关闭等待框
      */
     override fun dismissLoading() {
       //  dismissLoadingExt()
     }
+
+
 
    /* *//**
      * 在任何情况下本来适配正常的布局突然出现适配失效，适配异常等问题，只要重写 Activity 的 getResources() 方法

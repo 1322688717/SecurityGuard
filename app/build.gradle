@@ -52,4 +52,8 @@ dependencies {
 
 
     implementation 'com.github.hegaojian:JetpackMvvm:1.2.7'
+
+    //statusBar set
+    implementation 'com.geyifeng.immersionbar:immersionbar:3.2.2'
+    implementation 'com.geyifeng.immersionbar:immersionbar-ktx:3.2.2'
 }

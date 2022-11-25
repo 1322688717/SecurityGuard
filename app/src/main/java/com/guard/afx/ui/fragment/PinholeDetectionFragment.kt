@@ -71,10 +71,12 @@ class PinholeDetectionFragment : BaseFragment<PinholeDetectionViewModel, Fragmen
         if (name == "wifi"){
             mViewBind.tvTitle.text = "智能针孔检测"
             mViewBind.tvZero.text = "检测网络连接状态……"
+            mViewBind.tvTwo.text = "正在检测当前无线网络中可能存在的针孔设备……"
             getWifi()
         }else{
             mViewBind.tvTitle.text = "蓝牙检测"
             mViewBind.tvZero.text = "检测蓝牙连接状态……"
+            mViewBind.tvTwo.text = "正在检测周围蓝牙中可能存在的针孔设备……"
             getBluetooth()
         }
         Log.e("TAG", "name====$name")
@@ -131,6 +133,7 @@ class PinholeDetectionFragment : BaseFragment<PinholeDetectionViewModel, Fragmen
         }
     }
 
+    @SuppressLint("SetTextI18n")
     override fun run() {
         p++
         if (p==40){
@@ -144,6 +147,7 @@ class PinholeDetectionFragment : BaseFragment<PinholeDetectionViewModel, Fragmen
             mViewBind.ccRead.visibility = View.GONE
             mViewBind.llFinsh.visibility = View.VISIBLE
         }
+        mViewBind.tvRatio.text = "$p%"
         mViewBind.progressBar.progress = p
         handler.postDelayed(this,50)
     }

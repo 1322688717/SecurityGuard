@@ -12,7 +12,8 @@
     <!--    toolbar-->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="@dimen/dp_50">
+        android:layout_height="@dimen/dp_50"
+        android:layout_marginTop="@dimen/dp_23">
 
         <TextView
             android:id="@+id/tv_title"
