@@ -73,7 +73,6 @@ class PinholeDetectionFragment : BaseFragment<PinholeDetectionViewModel, Fragmen
             mViewBind.tvTitle.text = "智能针孔检测"
             mViewBind.tvZero.text = "检测网络连接状态……"
             mViewBind.tvTwo.text = "正在检测当前无线网络中可能存在的针孔设备……"
-            getWifiInfo(requireContext())
             registerPermission()
 
 
@@ -115,16 +114,6 @@ class PinholeDetectionFragment : BaseFragment<PinholeDetectionViewModel, Fragmen
 
 
 
-//    /**
-//     * 获取附件WiFi
-//     */
-//    private fun getWifi() {
-//        mWifiManager = context?.getSystemService(Context.WIFI_SERVICE) as WifiManager
-//        mWifiManager.startScan()
-//        val scanResults: List<ScanResult> = mWifiManager.scanResults
-//        Log.e("TAG", "scanResults====$scanResults")
-//    }
-
     private fun initClick() {
         mViewBind.apply {
             imgBack.setOnClickListener {
@@ -134,17 +123,10 @@ class PinholeDetectionFragment : BaseFragment<PinholeDetectionViewModel, Fragmen
         }
     }
 
-    /**
-     * 获取WifiInfo
-     * @param mContext
-     * @return
-     */
-    fun getWifiInfo(mContext: Context): WifiInfo? {
-        val mWifiManager =
-            mContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-        return mWifiManager.connectionInfo
-    }
 
+    /**
+     * 获取附近WiFi列表
+     */
     private fun getWifiList(): List<ScanResult> {
         val wifiManager: WifiManager = requireContext().applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         val scanWifiList: ArrayList<ScanResult> = wifiManager.scanResults as ArrayList<ScanResult>
@@ -160,6 +142,9 @@ class PinholeDetectionFragment : BaseFragment<PinholeDetectionViewModel, Fragmen
     }
 
 
+    /**
+     * 请求权限
+     */
     private fun registerPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
             checkSelfPermission(requireContext(),Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
