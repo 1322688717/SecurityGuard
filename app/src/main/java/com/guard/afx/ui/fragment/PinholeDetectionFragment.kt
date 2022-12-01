@@ -2,6 +2,7 @@ package com.guard.afx.ui.fragment
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.annotation.TargetApi
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.BroadcastReceiver
@@ -17,6 +18,8 @@ import android.os.Bundle
 import android.os.Handler
 import android.util.Log
 import android.view.View
+import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.navigation.fragment.NavHostFragment
@@ -24,6 +27,7 @@ import com.guard.afx.base.BaseFragment
 import com.guard.afx.databinding.FragmentPinholeDetectionBinding
 import com.guard.afx.viewmodel.PinholeDetectionViewModel
 import me.hgj.jetpackmvvm.ext.util.TAG
+import me.hgj.jetpackmvvm.util.ActivityMessenger.finish
 
 
 class PinholeDetectionFragment : BaseFragment<PinholeDetectionViewModel, FragmentPinholeDetectionBinding>(),
@@ -44,27 +48,11 @@ class PinholeDetectionFragment : BaseFragment<PinholeDetectionViewModel, Fragmen
 
     lateinit var mWifiManager : WifiManager
     var name : String = ""
-    private val receiver = object : BroadcastReceiver() {
-
-        @SuppressLint("MissingPermission")
-        override fun onReceive(context: Context, intent: Intent) {
-            when(intent.action) {
-                BluetoothDevice.ACTION_FOUND -> {
-                    // Discovery has found a device. Get the BluetoothDevice
-                    // object and its info from the Intent.
-                    val device: BluetoothDevice? = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
-                    val deviceName = device?.name
-                    val deviceHardwareAddress = device?.address // MAC address
-
-                    Log.e("TAG","deviceName===$deviceName")
-                    Log.e("TAG","deviceHardwareAddress===$deviceHardwareAddress")
-                }
-            }
-        }
-    }
 
 
 
+
+    @RequiresApi(Build.VERSION_CODES.M)
     override fun initView(savedInstanceState: Bundle?) {
 
         val bundle = arguments
@@ -87,30 +75,65 @@ class PinholeDetectionFragment : BaseFragment<PinholeDetectionViewModel, Fragmen
 
     }
 
+
+
+
     /**
      * 获取附件可连接蓝牙设备
      */
+    @RequiresApi(Build.VERSION_CODES.M)
     private fun getBluetooth() {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
+            var i = checkSelfPermission(requireActivity(), Manifest.permission.BLUETOOTH_CONNECT)
+            if (i != PackageManager.PERMISSION_GRANTED){
+                requestPermissions(arrayOf(Manifest.permission.BLUETOOTH_CONNECT),1)
+            }
+        }
+
+
+
         //获取 BluetoothAdapter
         val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
         Log.d("TAG", "蓝牙是否打开: " + bluetoothAdapter?.isEnabled)
 
+        // 注册Receiver来获取蓝牙设备相关的结果
+        var intentFilter = IntentFilter()
+        intentFilter.addAction(BluetoothDevice.ACTION_FOUND); // 用BroadcastReceiver来取得搜索结果
+        intentFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
+        intentFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+       // registerReceiver(searchDevices, intent);
 
-        //启用蓝牙
-        if (bluetoothAdapter?.isEnabled == false) {
-            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-            if (ActivityCompat.checkSelfPermission(requireActivity(), Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                return
-            }
-            startActivityForResult(enableBtIntent, 0)
-        }
+        //var broadcastReceiver : BroadcastReceiver = BroadcastReceiver()
 
-        //查找设备
         val filter = IntentFilter(BluetoothDevice.ACTION_FOUND)
         requireActivity().registerReceiver(receiver, filter)
 
-
     }
+
+
+
+    // Create a BroadcastReceiver for ACTION_FOUND.
+    private val receiver = object : BroadcastReceiver() {
+
+
+        @SuppressLint("MissingPermission")
+        @RequiresApi(Build.VERSION_CODES.S)
+        override fun onReceive(context: Context, intent: Intent) {
+            when(intent.action) {
+                BluetoothDevice.ACTION_FOUND -> {
+                    // Discovery has found a device. Get the BluetoothDevice
+                    // object and its info from the Intent.
+                    val device: BluetoothDevice? = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
+                    val deviceName = device?.name
+                    val deviceHardwareAddress = device?.address // MAC address
+                    Log.e("TAG","deviceName===$deviceName")
+                    Log.e("TAG","deviceHardwareAddress===$deviceHardwareAddress")
+                }
+            }
+        }
+    }
+
 
 
 
@@ -156,8 +179,31 @@ class PinholeDetectionFragment : BaseFragment<PinholeDetectionViewModel, Fragmen
     }
 
 
+    /**
+     * 请求权限回调
+     */
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 100) {
+            mList = getWifiList()
+        }
+
+        if (requestCode == 1){
+            if (grantResults[0] != PackageManager.PERMISSION_GRANTED){
+                Log.e("TAG","用户没有拿到权限")
+            }
+        }
+        
+    }
 
 
+    /**
+     * 设置进度条
+     */
     @SuppressLint("SetTextI18n")
     override fun run() {
         p++
@@ -183,16 +229,6 @@ class PinholeDetectionFragment : BaseFragment<PinholeDetectionViewModel, Fragmen
         handler.removeCallbacks(this@PinholeDetectionFragment)
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == 100) {
-            mList = getWifiList()
-        }
-    }
 
 
 
