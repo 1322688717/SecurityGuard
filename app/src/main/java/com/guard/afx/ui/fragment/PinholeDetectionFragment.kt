@@ -4,31 +4,32 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothManager
 import android.content.BroadcastReceiver
 import android.content.Context
-import android.content.Context.BLUETOOTH_SERVICE
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.net.wifi.ScanResult
+import android.net.wifi.WifiInfo
 import android.net.wifi.WifiManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
 import android.view.View
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat.getSystemService
+import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.navigation.fragment.NavHostFragment
 import com.guard.afx.base.BaseFragment
 import com.guard.afx.databinding.FragmentPinholeDetectionBinding
 import com.guard.afx.viewmodel.PinholeDetectionViewModel
 import me.hgj.jetpackmvvm.ext.util.TAG
-import me.hgj.jetpackmvvm.util.ActivityMessenger.finish
 
 
 class PinholeDetectionFragment : BaseFragment<PinholeDetectionViewModel, FragmentPinholeDetectionBinding>(),
     Runnable {
+
+    private lateinit var mList: List<ScanResult>
     //进度条进度
     var p = 0
      var handler: Handler = Handler()
@@ -72,17 +73,17 @@ class PinholeDetectionFragment : BaseFragment<PinholeDetectionViewModel, Fragmen
             mViewBind.tvTitle.text = "智能针孔检测"
             mViewBind.tvZero.text = "检测网络连接状态……"
             mViewBind.tvTwo.text = "正在检测当前无线网络中可能存在的针孔设备……"
-            getWifi()
+            getWifiInfo(requireContext())
+            registerPermission()
+
+
         }else{
             mViewBind.tvTitle.text = "蓝牙检测"
             mViewBind.tvZero.text = "检测蓝牙连接状态……"
             mViewBind.tvTwo.text = "正在检测周围蓝牙中可能存在的针孔设备……"
             getBluetooth()
         }
-        Log.e("TAG", "name====$name")
-
         handler.postDelayed(runnable,1)
-
         initClick()
 
     }
@@ -93,7 +94,7 @@ class PinholeDetectionFragment : BaseFragment<PinholeDetectionViewModel, Fragmen
     private fun getBluetooth() {
         //获取 BluetoothAdapter
         val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
-        Log.d(TAG, "蓝牙是否打开: " + bluetoothAdapter?.isEnabled)
+        Log.d("TAG", "蓝牙是否打开: " + bluetoothAdapter?.isEnabled)
 
 
         //启用蓝牙
@@ -114,15 +115,15 @@ class PinholeDetectionFragment : BaseFragment<PinholeDetectionViewModel, Fragmen
 
 
 
-    /**
-     * 获取附件WiFi
-     */
-    private fun getWifi() {
-        mWifiManager = context?.getSystemService(Context.WIFI_SERVICE) as WifiManager
-        mWifiManager.startScan()
-        val scanResults: List<ScanResult> = mWifiManager.scanResults
-        Log.e("TAG", "scanResults====$scanResults")
-    }
+//    /**
+//     * 获取附件WiFi
+//     */
+//    private fun getWifi() {
+//        mWifiManager = context?.getSystemService(Context.WIFI_SERVICE) as WifiManager
+//        mWifiManager.startScan()
+//        val scanResults: List<ScanResult> = mWifiManager.scanResults
+//        Log.e("TAG", "scanResults====$scanResults")
+//    }
 
     private fun initClick() {
         mViewBind.apply {
@@ -132,6 +133,45 @@ class PinholeDetectionFragment : BaseFragment<PinholeDetectionViewModel, Fragmen
             }
         }
     }
+
+    /**
+     * 获取WifiInfo
+     * @param mContext
+     * @return
+     */
+    fun getWifiInfo(mContext: Context): WifiInfo? {
+        val mWifiManager =
+            mContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        return mWifiManager.connectionInfo
+    }
+
+    private fun getWifiList(): List<ScanResult> {
+        val wifiManager: WifiManager = requireContext().applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        val scanWifiList: ArrayList<ScanResult> = wifiManager.scanResults as ArrayList<ScanResult>
+        Log.i("TAG", "getWifiList: ${wifiManager.connectionInfo}")
+        val wifiList = ArrayList<ScanResult>()
+        if (scanWifiList.isNotEmpty()) {
+            wifiList.addAll(scanWifiList)
+        } else {
+            Log.e("TAG", "没有获取到Wifi列表")
+        }
+        return wifiList
+
+    }
+
+
+    private fun registerPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+            checkSelfPermission(requireContext(),Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION,Manifest.permission.ACCESS_FINE_LOCATION), 100)
+        } else {
+            mList = getWifiList()
+        }
+    }
+
+
+
 
     @SuppressLint("SetTextI18n")
     override fun run() {
@@ -154,9 +194,21 @@ class PinholeDetectionFragment : BaseFragment<PinholeDetectionViewModel, Fragmen
 
     override fun onDestroy() {
         super.onDestroy()
-        TAG.plus("onDestroy")
-
+        Log.e("TAG","onDestroy")
+        handler.removeCallbacks(this@PinholeDetectionFragment)
     }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 100) {
+            mList = getWifiList()
+        }
+    }
+
 
 
 }
