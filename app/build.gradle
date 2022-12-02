@@ -54,7 +54,12 @@ dependencies {
 
     implementation 'com.github.hegaojian:JetpackMvvm:1.2.7'
 
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.0'
+
     //statusBar set
     implementation 'com.geyifeng.immersionbar:immersionbar:3.2.2'
     implementation 'com.geyifeng.immersionbar:immersionbar-ktx:3.2.2'
+
+    //https://github.com/guolindev/PermissionX  郭霖大神的权限请求库
+    implementation 'com.guolindev.permissionx:permissionx:1.7.1'
 }
