@@ -1,9 +1,11 @@
 package com.guard.afx.ui.fragment
 
+import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.content.Context
 import android.location.LocationManager
 import android.net.wifi.WifiManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -12,7 +14,7 @@ import com.guard.afx.R
 import com.guard.afx.base.BaseFragment
 import com.guard.afx.databinding.FragmentHomeBinding
 import com.guard.afx.viewmodel.HomeFragmentViewModel
-
+import com.permissionx.guolindev.PermissionX
 
 
 class HomeFragment : BaseFragment<HomeFragmentViewModel,FragmentHomeBinding>() {
@@ -35,7 +37,7 @@ class HomeFragment : BaseFragment<HomeFragmentViewModel,FragmentHomeBinding>() {
                     bundle.putString("name", "Bluetooth")
                     NavHostFragment.findNavController(this@HomeFragment).navigate(R.id.action_mainFragment_to_pinholeDetectionFragment,bundle)
                 }else{
-                    Toast.makeText(requireActivity(),"没有打开蓝牙",Toast.LENGTH_LONG).show()
+                    Toast.makeText(requireActivity(),"没有打开蓝牙或GPS",Toast.LENGTH_LONG).show()
                 }
 
             }
@@ -79,10 +81,59 @@ class HomeFragment : BaseFragment<HomeFragmentViewModel,FragmentHomeBinding>() {
      * 判断蓝牙是否打开
      */
     private fun isOpenBluetooth() : Boolean{
+        var isPermissAble : Boolean = false
+        // 获取权限
+        val resquestList = ArrayList<String>()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            resquestList.add(Manifest.permission.BLUETOOTH_ADVERTISE)
+            resquestList.add(Manifest.permission.BLUETOOTH_SCAN)
+            resquestList.add(Manifest.permission.BLUETOOTH_CONNECT)
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            resquestList.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+        }
+
+
+        resquestList.add(Manifest.permission.BLUETOOTH)
+        resquestList.add(Manifest.permission.BLUETOOTH_ADMIN)
+
+        resquestList.add(Manifest.permission.ACCESS_FINE_LOCATION)
+        resquestList.add(Manifest.permission.ACCESS_COARSE_LOCATION)
+
+        PermissionX.init(this)
+            .permissions(resquestList)
+            .onExplainRequestReason { scope, deniedList ->
+                scope.showRequestReasonDialog(deniedList, "需要这些权限", "OK", "Cancel")
+            }
+            .onForwardToSettings { scope, deniedList ->
+                scope.showForwardToSettingsDialog(deniedList, "你需要在设置中手动赋予权限", "OK", "Cancel")
+            }
+            .request { allGranted, grantedList, deniedList ->
+                if (allGranted) {
+                    //Toast.makeText(requireActivity(), "所有权限都以获取", Toast.LENGTH_LONG).show()
+                    isPermissAble = true
+
+                } else {
+                    Toast.makeText(requireActivity(), "以下权限已被拒绝: $deniedList", Toast.LENGTH_LONG).show()
+                    isPermissAble = false
+                }
+            }
+
+
         val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
         Log.d("TAG", "蓝牙是否打开: " + bluetoothAdapter?.isEnabled)
         val bluetooth : Boolean? = bluetoothAdapter?.isEnabled
-        return bluetooth!!
+
+//        LocationManager lm = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+//        boolean gpsEnabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
+
+        val locationManager : LocationManager = requireContext().getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val gpsEnable : Boolean = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+
+
+        return bluetooth!!&&gpsEnable&&isPermissAble
     }
 
 

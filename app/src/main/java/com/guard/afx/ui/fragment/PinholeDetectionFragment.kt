@@ -19,10 +19,12 @@ import android.view.View
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat.checkSelfPermission
+import androidx.core.os.postDelayed
 import androidx.navigation.fragment.NavHostFragment
 import com.guard.afx.base.BaseFragment
 import com.guard.afx.bluetooth.*
 import com.guard.afx.databinding.FragmentPinholeDetectionBinding
+import com.guard.afx.viewmodel.BlueToothViewMode
 import com.guard.afx.viewmodel.PinholeDetectionViewModel
 import com.permissionx.guolindev.PermissionX
 
@@ -35,21 +37,19 @@ class PinholeDetectionFragment : BaseFragment<PinholeDetectionViewModel, Fragmen
     var p = 0
      var handler: Handler = Handler()
      private var runnable: Runnable = Runnable(){
-         p++
-         if (p==100){
-             handler.removeCallbacks(this)
-         }
-         mViewBind.progressBar.progress = p
          handler.postDelayed(this,1)
      }
 
 
     var name : String = ""
-    private val listBluetoothDevice: List<BluetoothDevice> = java.util.ArrayList()
+    //上下文
     private var mContext = this
 
     private var mBluetoothFilter: IntentFilter? = null
+    //蓝牙广播
     private var mBluetoothReceiver: BluetoothReceiver? = null
+    //蓝牙viewmodel
+    var blueToothViewMode: BlueToothViewMode? = null
 
 
 
@@ -87,139 +87,31 @@ class PinholeDetectionFragment : BaseFragment<PinholeDetectionViewModel, Fragmen
 
     @SuppressLint("MissingPermission")
     private fun getBluetooth() {
-
-        val btAdapt = BluetoothAdapter.getDefaultAdapter()
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            PermissionX.init(this)
-                .permissions(
-                    Manifest.permission.BLUETOOTH_SCAN,
-                    Manifest.permission.BLUETOOTH_CONNECT
-                )
-                .request { allGranted, grantedList, deniedList ->
-                    if (allGranted) {
-                        Toast.makeText(
-                            requireActivity(),
-                            "All permissions are granted$grantedList",
-                            Toast.LENGTH_LONG
-                        )
-                            .show()
-                        if (!btAdapt.isDiscovering) {
-                            btAdapt.startDiscovery()
-                        }
-                    } else {
-                        Toast.makeText(
-                            requireActivity(),
-                            "These permissions are denied:$deniedList",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                }
+        val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+        if (bluetoothAdapter.isEnabled) { //打开
+            //开始扫描周围的蓝牙设备,如果扫描到蓝牙设备，通过广播接收器发送广播
+            bluetoothAdapter.startDiscovery()
+        } else {
+            Toast.makeText(activity,"请打开蓝牙",Toast.LENGTH_LONG).show()
         }
-
-        btAdapt.startDiscovery()
-        val intent = IntentFilter()
-        intent.apply {
-            addAction(BluetoothDevice.ACTION_FOUND)
-            addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED)
-            addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
-            addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
-            priority = IntentFilter.SYSTEM_HIGH_PRIORITY
-        }
-        mContext.requireActivity().registerReceiver(searchDevices, intent)
-
-
-
-//        val resquestList = ArrayList<String>()
-//        //新版本 Android12中
-//
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-//            resquestList.add(Manifest.permission.BLUETOOTH_ADVERTISE)
-//            resquestList.add(Manifest.permission.BLUETOOTH_SCAN)
-//            resquestList.add(Manifest.permission.BLUETOOTH_CONNECT)
-//        }
-//
-//
-//        //安卓12以下
-//        resquestList.add(Manifest.permission.BLUETOOTH)
-//        resquestList.add(Manifest.permission.BLUETOOTH_ADMIN)
-//
-//        PermissionX.init(this)
-//            .permissions(resquestList)
-//            .onExplainRequestReason { scope, deniedList ->
-//                scope.showRequestReasonDialog(deniedList, "需要这些权限", "OK", "Cancel")
-//            }
-//            .onForwardToSettings { scope, deniedList ->
-//                scope.showForwardToSettingsDialog(deniedList, "你需要在设置中手动赋予权限", "OK", "Cancel")
-//            }
-//            .request { allGranted, grantedList, deniedList ->
-//                if (allGranted) {
-//                    Toast.makeText(requireActivity(), "所有权限都以获取", Toast.LENGTH_LONG).show()
-//                } else {
-//                    Toast.makeText(requireActivity(), "以下权限已被拒绝: $deniedList", Toast.LENGTH_LONG).show()
-//                    fetchAlReadyConnection()
-//                }
-//            }
-//
-//        // 输出蓝牙列表
-//        if (!checkBluetoothEnable()) {
-//            if (mBluetoothReceiver == null) {
-//                mBluetoothReceiver = BluetoothReceiver()
-//            }
-//            if (mBluetoothFilter == null) {
-//                mBluetoothFilter = BluetoothReceiver.registerIntentFilter()
-//            }
-//            if (mBluetoothReceiver != null && mBluetoothFilter != null) {
-//                activity?.registerReceiver(mBluetoothReceiver, mBluetoothFilter)
-//            }
-//
-//            if (checkBluetoothStateEnable() && hasBluetoothAudioDevice()) { // 蓝牙已打开 且 已连接
-//                Log.e("HLQ", "----> 蓝牙已打开且已连接")
-//                Log.e("HLQ", "----> 输出已配对成功蓝牙列表")
-//                Log.e("HLQ", "----> ${fetchAlReadyConnection()}")
-//                Log.e("HLQ", "----> 当前连接蓝牙名称：${getConnectedBtDevice()}")
-//            } else if (checkBluetoothStateEnable() && !hasBluetoothAudioDevice() ) {
-//                Log.i("打印列表","${fetchAlReadyConnection()}")
-//            }
-//
-//        }
+        getBlueTooth()
     }
 
-
-    private val searchDevices: BroadcastReceiver = object : BroadcastReceiver() {
-        @SuppressLint("MissingPermission")
-        override fun onReceive(context: Context, intent: Intent) {
-            when (intent.action) {
-                BluetoothAdapter.ACTION_STATE_CHANGED -> {
-                    //  LogUtil.LOGE("ACTION_STATE_CHANGED")
-                    Log.e("TAG","ACTION_STATE_CHANGED")
-                }
-                BluetoothDevice.ACTION_FOUND -> { //found device
-                    val device =
-                        intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
-
-                    if (!device?.name.isNullOrEmpty()) {
-                        // 得到设备对象
-                        Log.e("TAG","device===$device")
-
-                        //mData.add(device)
-                        //adapter.notifyDataSetChanged()
-                    }
-                }
-                BluetoothAdapter.ACTION_DISCOVERY_STARTED -> {
-                    // ToastUtil.show("正在扫描")
-                    Log.e("TAG","正在扫描")
-                }
-                BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
-                    //ToastUtil.show("扫描完成，点击列表中的设备来尝试连接")
-                    Log.e("TAG","扫描完成，点击列表中的设备来尝试连接")
-                }
+    fun getBlueTooth(){
+        // 输出蓝牙列表
+        if (!checkBluetoothEnable()) {
+            // 动态注册
+            if (mBluetoothReceiver == null) {
+                mBluetoothReceiver = BluetoothReceiver(blueToothViewMode)
+            }
+            if (mBluetoothFilter == null) {
+                mBluetoothFilter = BluetoothReceiver.registerIntentFilter()
+            }
+            if (mBluetoothReceiver != null && mBluetoothFilter != null) {
+                activity?.registerReceiver(mBluetoothReceiver, mBluetoothFilter)
             }
         }
     }
-
-
-
 
 
     private fun initClick() {
@@ -292,7 +184,7 @@ class PinholeDetectionFragment : BaseFragment<PinholeDetectionViewModel, Fragmen
             mViewBind.tvTwo.visibility = View.VISIBLE
         }
         if (p==100){
-            handler.removeCallbacks(this)
+            handler.removeCallbacks(runnable)
             mViewBind.ccRead.visibility = View.GONE
             mViewBind.llFinsh.visibility = View.VISIBLE
         }
@@ -305,7 +197,10 @@ class PinholeDetectionFragment : BaseFragment<PinholeDetectionViewModel, Fragmen
         super.onDestroy()
         Log.e("TAG","onDestroy")
         handler.removeCallbacks(this@PinholeDetectionFragment)
-          
+        if (mBluetoothReceiver != null){
+            requireActivity().unregisterReceiver(mBluetoothReceiver)
+        }
+
     }
 
 
